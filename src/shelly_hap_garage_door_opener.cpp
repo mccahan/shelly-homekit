@@ -223,6 +223,16 @@ void GarageDoorOpener::SetCurState(State new_state) {
       ("GDO %d: Cur State: %s -> %s (%d -> %d)", id(), StateStr(cur_state_),
        StateStr(new_state), (int) cur_state_, (int) new_state));
   bool obst_notify;
+
+  if (new_state == State::kOpening && cur_state_ == State::kClosed && mgos_uptime_micros() - last_close_ < 3000*1000) {
+    LOG(LL_INFO, ("Early change detected, ignoring"));
+    return;
+  }
+
+  if (new_state == State::kClosed) {
+    LOG(LL_INFO, ("Resetting last close time"));
+    last_close_ = mgos_uptime_micros();
+  }
   if (cur_state_ == State::kStopped) {
     // Leaving Stopepd state - reset the "obstruction detected" flag.
     obstruction_detected_ = false;
@@ -309,6 +319,12 @@ void GarageDoorOpener::SetTgtState(State new_state, const char *src) {
                   StateStr(tgt_state_), StateStr(new_state), (int) tgt_state_,
                   (int) new_state, src));
   }
+
+  if (mgos_uptime_micros() - last_close_ < 3000*1000) {
+    LOG(LL_INFO, ("Early change detected, ignoring (%s)", src));
+    return;
+  }
+
   tgt_state_ = new_state;
   // Always notify, even if not changed, to make sure HAP is in sync with
   // reality that may be different from what it thinks it is.

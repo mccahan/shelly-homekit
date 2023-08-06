@@ -87,6 +87,7 @@ class GarageDoorOpener : public Component, public mgos::hap::Service {
   State tgt_state_;
   State pre_stopped_state_;
   int64_t begin_ = 0;
+  int64_t last_close_ = 0;
   bool obstruction_detected_ = false;
 };
 
